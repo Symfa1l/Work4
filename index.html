@@ -38,7 +38,7 @@
     <a-entity id="model"
         gltf-model="#sceneModel"
         scale="0.01 0.01 0.01"
-        position="0 0 -4"
+        position="0 1 -4"
         rotation="0 0 0"
         spin-toggle="speed:3">
     </a-entity>
@@ -62,7 +62,7 @@
   window.addEventListener("load", ()=>{
     if (AFRAME.utils.device.isMobile()) {
         camera.appendChild(model);
-        model.setAttribute("position","0 -0.6 -4");
+        model.setAttribute("position","0 0 -4");
     }
   });
 
