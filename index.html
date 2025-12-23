@@ -8,9 +8,7 @@
   <script>
     AFRAME.registerComponent('spin-toggle', {
       schema:{speed:{default:1}},
-      init(){
-        this.enabled = false;
-      },
+      init(){ this.enabled = false; },
       tick(time,dt){
         if(!this.enabled) return;
         this.el.object3D.rotation.y += (dt/1000) * this.data.speed * 2;
@@ -31,6 +29,10 @@
         <a-asset-item id="sceneModel" src="scene.gltf"></a-asset-item>
     </a-assets>
 
+    <a-entity>
+        <a-camera id="mainCam" rotation-reader look-controls wasd-controls></a-camera>
+    </a-entity>
+
     <a-entity id="model"
         gltf-model="#sceneModel"
         scale="0.01 0.01 0.01"
@@ -45,16 +47,20 @@
         loop="true">
     </a-sound>
 
-    <a-entity>
-        <a-camera rotation-reader look-controls wasd-controls></a-camera>
-    </a-entity>
-
 </a-scene>
 
 <script>
   const model = document.querySelector("#model");
   const sound = document.querySelector("#bgm");
+  const camera = document.querySelector("#mainCam");
   let spinning = false;
+
+  window.addEventListener("load", ()=>{
+    if (AFRAME.utils.device.isMobile()) {
+        camera.appendChild(model);     
+        model.setAttribute("position","0 0 -4");   
+    }
+  });
 
   function toggleAction(){
     const comp = model.components["spin-toggle"];
