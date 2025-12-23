@@ -38,7 +38,7 @@
     <a-entity id="model"
         gltf-model="#sceneModel"
         scale="0.01 0.01 0.01"
-        position="0 1 -4"
+        position="0 0 -4"
         rotation="0 0 0"
         spin-toggle="speed:3">
     </a-entity>
@@ -62,11 +62,11 @@
   window.addEventListener("load", ()=>{
     if (AFRAME.utils.device.isMobile()) {
         camera.appendChild(model);
-        model.setAttribute("position","0 -0.6 -4"); 
+        model.setAttribute("position","0 -0.6 -4");
     }
   });
 
-  function toggleAction(){
+  function toggleSpinMusic(){
     const comp = model.components["spin-toggle"];
     if(!comp) return;
 
@@ -84,24 +84,28 @@
     if (spinning){
       if(!audioStarted){
         try{ s.playSound(); audioStarted = true; }catch(e){}
-      } else {
-        if(!s.isPlaying){
-          try{s.playSound();}catch(e){}
-        }
+      } else if(!s.isPlaying){
+        try{s.playSound();}catch(e){}
       }
-    }
-    else{
+    } else {
       if(s.isPlaying){
         try{s.pauseSound();}catch(e){}
       }
     }
   }
 
-  document.body.addEventListener("pointerdown", (e)=>{
-    if(e.pointerType === "touch" && e.isPrimary === false) return;
+  document.addEventListener("click", ()=>{
+    if(!AFRAME.utils.device.isMobile()){
+      toggleSpinMusic();
+    }
   });
 
-  document.body.addEventListener("pointerdown", toggleAction);
+  document.addEventListener("touchstart", e=>{
+    if(e.touches.length === 1){
+      toggleSpinMusic();
+    }
+  });
+
   let startDist = null;
   let startZ = -4;
 
@@ -139,7 +143,6 @@
   document.addEventListener("touchend", ()=>{
     startDist = null;
   });
-
 </script>
 
 </body>
