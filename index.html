@@ -48,107 +48,126 @@
 </a-scene>
 
 <script>
-const model = document.querySelector("#model");
-const sound = document.querySelector("#bgm");
-const camera = document.querySelector("#mainCam");
+  const model = document.querySelector("#model");
+  const sound = document.querySelector("#bgm");
+  const camera = document.querySelector("#mainCam");
 
-let spinning = false;
-let audioStarted = false;
-let isPinching = false;
+  let spinning = false;
+  let audioStarted = false;
 
-window.addEventListener("load", ()=>{
-  if (AFRAME.utils.device.isMobile()) {
-      camera.appendChild(model);
-      model.setAttribute("position","0 0 -4");
-  }
-});
-
-async function toggleSpinMusic(){
-  if(isPinching) return; 
-
-  const comp = model.components["spin-toggle"];
-  if(!comp) return;
-
-  try{
-    if (AFRAME.audioContext.state === "suspended") {
-      await AFRAME.audioContext.resume();
+  // ---------------- MOBILE attach + lower model ----------------
+  window.addEventListener("load", ()=>{
+    if (AFRAME.utils.device.isMobile()) {
+        camera.appendChild(model);
+        model.setAttribute("position","0 -0.8 -4");
     }
-  }catch(e){}
+  });
 
-  spinning = !spinning;
-  comp.enabled = spinning;
+  // ---------------- Toggle Spin + Music ----------------
+  async function toggleSpinMusic(){
+    const comp = model.components["spin-toggle"];
+    if(!comp) return;
 
-  const s = sound.components.sound;
+    try{
+      if (AFRAME.audioContext.state === "suspended") {
+        await AFRAME.audioContext.resume();
+      }
+    }catch(e){}
 
-  if (spinning){
-    if(!audioStarted){
-      s.stopSound();
-      s.playSound();
-      audioStarted = true;
-    } 
-    else if(!s.isPlaying){
-      s.playSound();
+    spinning = !spinning;
+    comp.enabled = spinning;
+
+    const s = sound.components.sound;
+
+    if (spinning){
+      if(!audioStarted){
+        try{
+          s.stopSound();
+          s.playSound();
+          audioStarted = true;
+        }catch(e){}
+      } 
+      else if(!s.isPlaying){
+        try{s.playSound();}catch(e){}
+      }
     }
-  } else {
-    if(s.isPlaying){
-      s.pauseSound();
+    else{
+      if(s.isPlaying){
+        try{s.pauseSound();}catch(e){}
+      }
     }
   }
-}
 
-document.addEventListener("click", ()=>{
-  if(!AFRAME.utils.device.isMobile()){
-    toggleSpinMusic();
+  // ---------------- PC CLICK detection (avoid drag) ----------------
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+
+  document.addEventListener("mousedown", e=>{
+    startX = e.clientX;
+    startY = e.clientY;
+    isDragging = false;
+  });
+
+  document.addEventListener("mousemove", e=>{
+    const dx = Math.abs(e.clientX - startX);
+    const dy = Math.abs(e.clientY - startY);
+    if(dx > 5 || dy > 5){
+      isDragging = true;
+    }
+  });
+
+  document.addEventListener("mouseup", ()=>{
+    if(!AFRAME.utils.device.isMobile() && !isDragging){
+      toggleSpinMusic();
+    }
+  });
+
+  // ---------------- MOBILE single touch = toggle ----------------
+  document.addEventListener("touchstart", e=>{
+    if(e.touches.length === 1){
+      toggleSpinMusic();
+    }
+  });
+
+  // ---------------- MOBILE PINCH ZOOM ----------------
+  let startDist = null;
+  let startZ = -4;
+
+  function getDistance(touches){
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
   }
-});
 
-document.addEventListener("touchstart", e=>{
-  if(e.touches.length === 1 && !isPinching){
-    toggleSpinMusic();
-  }
-});
+  document.addEventListener("touchstart", e=>{
+    if(e.touches.length === 2){
+      startDist = getDistance(e.touches);
+      const pos = model.getAttribute("position");
+      startZ = pos.z;
+    }
+  });
 
-let startDist = null;
-let startZ = -4;
+  document.addEventListener("touchmove", e=>{
+    if(e.touches.length === 2 && startDist){
+      e.preventDefault();
+      const newDist = getDistance(e.touches);
+      const diff = (newDist - startDist) * 0.02;
 
-function getDistance(touches){
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx*dx + dy*dy);
-}
+      let pos = model.getAttribute("position");
+      pos.z = startZ - diff;
 
-document.addEventListener("touchstart", e=>{
-  if(e.touches.length === 2){
-    isPinching = true;
-    startDist = getDistance(e.touches);
-    const pos = model.getAttribute("position");
-    startZ = pos.z;
-  }
-});
+      if(pos.z > -1) pos.z = -1;
+      if(pos.z < -10) pos.z = -10;
 
-document.addEventListener("touchmove", e=>{
-  if(e.touches.length === 2 && startDist){
-    e.preventDefault();
+      model.setAttribute("position", pos);
+    }
+  }, {passive:false});
 
-    const newDist = getDistance(e.touches);
-    const diff = (newDist - startDist) * 0.02;
-
-    let pos = model.getAttribute("position");
-    pos.z = startZ - diff;
-
-    if(pos.z > -1) pos.z = -1;
-    if(pos.z < -10) pos.z = -10;
-
-    model.setAttribute("position", pos);
-  }
-},{passive:false});
-
-document.addEventListener("touchend", e=>{
-  if(e.touches.length < 2){
-    isPinching = false;
+  document.addEventListener("touchend", ()=>{
     startDist = null;
-  }
-});
+  });
+
 </script>
 
 </body>
