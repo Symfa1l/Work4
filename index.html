@@ -2,6 +2,7 @@
 <head>
   <meta charset="utf-8">
   <title>Markerless AR Interaction</title>
+
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://rawcdn.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
@@ -25,8 +26,9 @@
     embedded
     arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false">
 
-    <a-assets>
+    <a-assets timeout="20000">
         <a-asset-item id="sceneModel" src="scene.gltf"></a-asset-item>
+        <audio id="music" src="Padoru.mp3" preload="auto"></audio>
     </a-assets>
 
     <a-entity>
@@ -43,7 +45,7 @@
 
     <a-sound
         id="bgm"
-        src="url(Padoru.mp3)"
+        src="#music"
         loop="true">
     </a-sound>
 
@@ -53,12 +55,14 @@
   const model = document.querySelector("#model");
   const sound = document.querySelector("#bgm");
   const camera = document.querySelector("#mainCam");
+
   let spinning = false;
+  let audioStarted = false;
 
   window.addEventListener("load", ()=>{
     if (AFRAME.utils.device.isMobile()) {
-        camera.appendChild(model);     
-        model.setAttribute("position","0 0 -4");   
+        camera.appendChild(model);
+        model.setAttribute("position","0 -0.6 -4"); 
     }
   });
 
@@ -77,18 +81,65 @@
 
     const s = sound.components.sound;
 
-    if(spinning){
-      if(!s.isPlaying){
-        try{s.playSound();}catch(e){}
+    if (spinning){
+      if(!audioStarted){
+        try{ s.playSound(); audioStarted = true; }catch(e){}
+      } else {
+        if(!s.isPlaying){
+          try{s.playSound();}catch(e){}
+        }
       }
-    }else{
+    }
+    else{
       if(s.isPlaying){
         try{s.pauseSound();}catch(e){}
       }
     }
   }
 
+  document.body.addEventListener("pointerdown", (e)=>{
+    if(e.pointerType === "touch" && e.isPrimary === false) return;
+  });
+
   document.body.addEventListener("pointerdown", toggleAction);
+  let startDist = null;
+  let startZ = -4;
+
+  function getDistance(touches){
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  document.addEventListener("touchstart", e=>{
+    if(e.touches.length === 2){
+      startDist = getDistance(e.touches);
+      const pos = model.getAttribute("position");
+      startZ = pos.z;
+    }
+  });
+
+  document.addEventListener("touchmove", e=>{
+    if(e.touches.length === 2 && startDist){
+      e.preventDefault();
+
+      const newDist = getDistance(e.touches);
+      const diff = (newDist - startDist) * 0.02;
+
+      let pos = model.getAttribute("position");
+      pos.z = startZ - diff;
+
+      if(pos.z > -1) pos.z = -1;
+      if(pos.z < -10) pos.z = -10;
+
+      model.setAttribute("position", pos);
+    }
+  }, {passive:false});
+
+  document.addEventListener("touchend", ()=>{
+    startDist = null;
+  });
+
 </script>
 
 </body>
