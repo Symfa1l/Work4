@@ -56,25 +56,32 @@
   const sound = document.querySelector("#bgm");
   let spinning = false;
 
-function toggleAction(){
+  function toggleAction(){
     const comp = model.components["spin-toggle"];
     if(!comp) return;
 
     try{
       if (AFRAME.audioContext.state === "suspended") {
-          AFRAME.audioContext.resume();
+        AFRAME.audioContext.resume();
       }
     }catch(e){}
 
     spinning = !spinning;
     comp.enabled = spinning;
 
+    const s = sound.components.sound;
+
     if(spinning){
-      try{ sound.components.sound.playSound(); }catch(e){}
+      if(!s.isPlaying){
+        try{s.playSound();}catch(e){}
+      }
     }else{
-      try{ sound.components.sound.stopSound(); }catch(e){}
+      if(s.isPlaying){
+        try{s.pauseSound();}catch(e){}
+      }
     }
-}
+  }
+
   document.body.addEventListener("pointerdown", toggleAction);
 </script>
 
