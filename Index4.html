@@ -1,0 +1,82 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Markerless AR Interaction</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://rawcdn.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+
+  <script>
+    AFRAME.registerComponent('spin-toggle', {
+      schema:{speed:{default:1}},
+      init(){
+        this.enabled = false;
+      },
+      tick(time,dt){
+        if(!this.enabled) return;
+        this.el.object3D.rotation.y += (dt/1000) * this.data.speed * 2;
+      }
+    });
+  </script>
+</head>
+
+<body style="margin:0; overflow:hidden;">
+
+<a-scene
+    id="scene"
+    vr-mode-ui="enabled: false"
+    embedded
+    arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false">
+
+    <a-assets>
+        <a-asset-item id="sceneModel" src="scene.gltf"></a-asset-item>
+    </a-assets>
+
+    <a-entity id="model"
+        gltf-model="#sceneModel"
+        scale="0.01 0.01 0.01"
+        position="0 1 -4"
+        rotation="0 0 0"
+        spin-toggle="speed:3">
+    </a-entity>
+
+    <a-sound
+        id="bgm"
+        src="url(Padoru.mp3)"
+        loop="true">
+    </a-sound>
+
+    <a-entity>
+        <a-camera rotation-reader look-controls wasd-controls></a-camera>
+    </a-entity>
+
+</a-scene>
+
+<script>
+  const model = document.querySelector("#model");
+  const sound = document.querySelector("#bgm");
+  let spinning = false;
+
+function toggleAction(){
+    const comp = model.components["spin-toggle"];
+    if(!comp) return;
+
+    try{
+      if (AFRAME.audioContext.state === "suspended") {
+          AFRAME.audioContext.resume();
+      }
+    }catch(e){}
+
+    spinning = !spinning;
+    comp.enabled = spinning;
+
+    if(spinning){
+      try{ sound.components.sound.playSound(); }catch(e){}
+    }else{
+      try{ sound.components.sound.stopSound(); }catch(e){}
+    }
+}
+  document.body.addEventListener("pointerdown", toggleAction);
+</script>
+
+</body>
+</html>
